@@ -39,9 +39,8 @@ RUN sed -i 's/jessie/stretch/' /etc/apt/sources.list && \
 
 WORKDIR /var/tmp
 
-RUN git clone -b v3.0.0 https://github.com/google/protobuf.git && \
+RUN git clone -b v3.2.0 https://github.com/google/protobuf.git && \
     cd /tmp/protobuf && \
-    (git cherry-pick 1760feb621a913189b90fe8595fffb74bce84598; echo Force continue) && \
     ./autogen.sh && \
     ./configure --prefix=/usr && \
     make -j 14 && \
@@ -55,9 +54,8 @@ RUN git clone -b v3.0.0 https://github.com/google/protobuf.git && \
 # https://github.com/grpc/grpc/issues/8801
 COPY ./grpc.patch /var/tmp
 
-RUN git clone --recursive -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc.git && \
+RUN git clone --recursive -b v1.1.2 https://github.com/grpc/grpc.git && \
     cd grpc && \
-    cat //var/tmp/grpc.patch | patch -u -p1 && \
     make && \
     make install
 
