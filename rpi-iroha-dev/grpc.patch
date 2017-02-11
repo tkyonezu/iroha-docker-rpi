@@ -1,0 +1,142 @@
+Index: grpc-1.0.0/src/core/lib/tsi/ssl_tranport_security.c
+===================================================================
+--- grpc-1.0.0.orig/src/core/lib/tsi/ssl_transport_security.c
++++ grpc-1.0.0/src/core/lib/tsi/ssl_transport_security.c
+@@ -129,17 +129,17 @@
+ static gpr_once init_openssl_once = GPR_ONCE_INIT;
+ static gpr_mu *openssl_mutexes = NULL;
+
+-static void openssl_locking_cb(int mode, int type, const char *file, int line) {
+-  if (mode & CRYPTO_LOCK) {
+-    gpr_mu_lock(&openssl_mutexes[type]);
+-  } else {
+-    gpr_mu_unlock(&openssl_mutexes[type]);
+-  }
+-}
++// static void openssl_locking_cb(int mode, int type, const char *file, int line) {
++//   if (mode & CRYPTO_LOCK) {
++//     gpr_mu_lock(&openssl_mutexes[type]);
++//   } else {
++//     gpr_mu_unlock(&openssl_mutexes[type]);
++//   }
++// }
+
+-static unsigned long openssl_thread_id_cb(void) {
+-  return (unsigned long)gpr_thd_currentid();
+-}
++// static unsigned long openssl_thread_id_cb(void) {
++//   return (unsigned long)gpr_thd_currentid();
++// }
+
+ static void init_openssl(void) {
+   int i;
+
+Index: grpc-1.0.0/third_party/boringssl/crypto/directory_posix.c
+===================================================================
+--- grpc-1.0.0.orig/third_party/boringssl/crypto/directory_posix.c
++++ grpc-1.0.0/third_party/boringssl/crypto/directory_posix.c
+@@ -85,8 +85,9 @@
+     }
+   }
+ 
+-  if (readdir_r((*ctx)->dir, &(*ctx)->dirent, &dirent) != 0 ||
+-      dirent == NULL) {
++  // if (readdir_r((*ctx)->dir, &(*ctx)->dirent, &dirent) != 0 ||
++  //     dirent == NULL) {
++  if (dirent = readdir((*ctx)->dir)) != BULL){
+     return 0;
+   }
+
+Index: grpc-1.0.0/src/core/lib/security/credentials/jwt/jwt_verifier.c
+===================================================================
+--- grpc-1.0.0.orig/src/core/lib/security/credentials/jwt/jwt_verifier.c
++++ grpc-1.0.0/src/core/lib/security/credentials/jwt/jwt_verifier.c
+@@ -467,6 +467,7 @@ static EVP_PKEY *pkey_from_jwk(const grp
+   const grpc_json *key_prop;
+   RSA *rsa = NULL;
+   EVP_PKEY *result = NULL;
++  BIGNUM *n = NULL, *e = NULL;
+
+   GPR_ASSERT(kty != NULL && json != NULL);
+   if (strcmp(kty, "RSA") != 0) {
+@@ -480,22 +481,30 @@ static EVP_PKEY *pkey_from_jwk(const grp
+   }
+   for (key_prop = json->child; key_prop != NULL; key_prop = key_prop->next) {
+     if (strcmp(key_prop->key, "n") == 0) {
+-      rsa->n = bignum_from_base64(validate_string_field(key_prop, "n"));
+-      if (rsa->n == NULL) goto end;
++      n = bignum_from_base64(validate_string_field(key_prop, "n"));
++      if (n == NULL) goto end;
+     } else if (strcmp(key_prop->key, "e") == 0) {
+-      rsa->e = bignum_from_base64(validate_string_field(key_prop, "e"));
+-      if (rsa->e == NULL) goto end;
++      e = bignum_from_base64(validate_string_field(key_prop, "e"));
++      if (e == NULL) goto end;
+     }
+   }
+-  if (rsa->e == NULL || rsa->n == NULL) {
++  if (e == NULL || n == NULL) {
+     gpr_log(GPR_ERROR, "Missing RSA public key field.");
+     goto end;
+   }
++  if (RSA_set0_key(rsa, n, e, NULL)) {
++    n = e = NULL;  // Now owned by the RSA object.
++  } else {
++    goto end;
++  }
++
+   result = EVP_PKEY_new();
+   EVP_PKEY_set1_RSA(result, rsa); /* uprefs rsa. */
+
+ end:
+   if (rsa != NULL) RSA_free(rsa);
++  if (n != NULL) BN_free(n);
++  if (e != NULL) BN_free(e);
+   return result;
+ }
+
+Index: grpc-1.0.0/src/core/lib/tsi/ssl_transport_security.c
+===================================================================
+--- grpc-1.0.0.orig/src/core/lib/tsi/ssl_transport_security.c
++++ grpc-1.0.0/src/core/lib/tsi/ssl_transport_security.c
+@@ -1330,7 +1330,7 @@ tsi_result tsi_create_ssl_client_handsha
+   *factory = NULL;
+   if (pem_root_certs == NULL) return TSI_INVALID_ARGUMENT;
+
+-  ssl_context = SSL_CTX_new(TLSv1_2_method());
++  ssl_context = SSL_CTX_new(TLS_method());
+   if (ssl_context == NULL) {
+     gpr_log(GPR_ERROR, "Could not create ssl context.");
+     return TSI_INVALID_ARGUMENT;
+@@ -1341,6 +1341,12 @@ tsi_result tsi_create_ssl_client_handsha
+   impl->ssl_context = ssl_context;
+
+   do {
++    result = SSL_CTX_set_min_proto_version(ssl_context, TLS1_2_VERSION);
++    if (result != TSI_OK) {
++      gpr_log(GPR_ERROR, "Could not set minimum TLS version.");
++      break;
++    }
++
+     result =
+         populate_ssl_context(ssl_context, pem_private_key, pem_private_key_size,
+                              pem_cert_chain, pem_cert_chain_size, cipher_list);
+@@ -1461,12 +1467,17 @@ tsi_result tsi_create_ssl_server_handsha
+
+   for (i = 0; i < key_cert_pair_count; i++) {
+     do {
+-      impl->ssl_contexts[i] = SSL_CTX_new(TLSv1_2_method());
++      impl->ssl_contexts[i] = SSL_CTX_new(TLS_method());
+       if (impl->ssl_contexts[i] == NULL) {
+         gpr_log(GPR_ERROR, "Could not create ssl context.");
+         result = TSI_OUT_OF_RESOURCES;
+         break;
+       }
++      result = SSL_CTX_set_min_proto_version(impl->ssl_contexts[i], TLS1_2_VERSION);
++      if (result != TSI_OK) {
++        gpr_log(GPR_ERROR, "Could not set minimum TLS version.");
++        break;
++      }
+       result = populate_ssl_context(
+           impl->ssl_contexts[i], pem_private_keys[i], pem_private_keys_sizes[i],
+           pem_cert_chains[i], pem_cert_chains_sizes[i], cipher_list);
