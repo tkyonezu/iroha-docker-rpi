@@ -15,8 +15,6 @@ Index: iroha/core/infra/crypto/Makefile
 +CFLAGS := $(CFLAGS) -I$(KECCAK_PATH)/bin/generic32/libkeccak.a.headers
  
 -KeccakP-1600-opt64.o: $(KECCAK_PATH)/SnP/KeccakP-1600/Optimized64/KeccakP-1600-opt64.c
-+INCLUDES =
-+
 +KeccakP-800-opt32.o: $(KECCAK_PATH)/SnP/KeccakP-800/Optimized32/KeccakP-800-opt32.c
  	$(CC) $(INCLUDES) $(CFLAGS) -c $< -o $@
 -OBJECTS := $(OBJECTS) KeccakP-1600-opt64.o
