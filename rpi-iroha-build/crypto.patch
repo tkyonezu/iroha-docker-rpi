@@ -1,0 +1,26 @@
+Index: iroha/core/infra/crypto/Makefile
+===================================================================
+--- iroha.orig/core/infra/crypto/Makefile
++++ iroha/core/infra/crypto/Makefile
+@@ -3,15 +3,17 @@
+ CC = g++
+ KECCAK_PATH = ../../vendor/KeccakCodePackage
+ 
+-DEFINE  = -DKeccakP200_excluded -DKeccakP400_excluded -DKeccakP800_excluded
++DEFINE  = -DKeccakP200_excluded -DKeccakP400_excluded -DKeccakP1600_excluded
+ 
+ CFLAGS := $(CFLAGS) -std=c++0x
+ CFLAGS := $(CFLAGS) $(DEFINE)
+-CFLAGS := $(CFLAGS) -I$(KECCAK_PATH)/bin/generic64/libkeccak.a.headers
++CFLAGS := $(CFLAGS) -I$(KECCAK_PATH)/bin/generic32/libkeccak.a.headers
+ 
+-KeccakP-1600-opt64.o: $(KECCAK_PATH)/SnP/KeccakP-1600/Optimized64/KeccakP-1600-opt64.c
++INCLUDES =
++
++KeccakP-800-opt32.o: $(KECCAK_PATH)/SnP/KeccakP-800/Optimized32/KeccakP-800-opt32.c
+ 	$(CC) $(INCLUDES) $(CFLAGS) -c $< -o $@
+-OBJECTS := $(OBJECTS) KeccakP-1600-opt64.o
++OBJECTS := $(OBJECTS) KeccakP-800-opt32.o
+ 
+ KeccakSponge.o: $(KECCAK_PATH)/Constructions/KeccakSponge.c
+ 	$(CC) $(INCLUDES) $(CFLAGS) -c $< -o $@

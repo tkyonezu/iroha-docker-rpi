@@ -1,0 +1,104 @@
+Index: iroha/core/infra/protobuf/convertor.cpp
+===================================================================
+--- iroha.orig/core/infra/protobuf/convertor.cpp
++++ iroha/core/infra/protobuf/convertor.cpp
+@@ -57,9 +57,9 @@
+         object::Account decodeObject(Event::Account aAccount){
+             auto publicKey = aAccount.publickey();
+             auto name = aAccount.name();
+-            std::vector<std::tuple<std::string,long>> assets;
++            std::vector<std::tuple<std::string,std::int64_t>> assets;
+             for(const Event::Asset& as: aAccount.assets()){
+-                assets.emplace_back(as.name(), static_cast<long>(as.value()));
++                assets.emplace_back(as.name(), static_cast<std::int64_t>(as.value()));
+             }
+             return object::Account(
+                     std::move(publicKey),
+@@ -114,7 +114,7 @@
+         ConsensusEvent<Transaction<Add<object::Account>>> decodeTransaction2ConsensusEvent(Event::Transaction tx){
+             auto name = tx.account().name();
+             auto publicKey = tx.account().publickey();
+-            std::vector<std::tuple<std::string,long>> assets;
++            std::vector<std::tuple<std::string,std::int64_t>> assets;
+             for(auto&& as: tx.account().assets()){
+                 assets.emplace_back(as.name(), as.value());
+             }
+
+Index: iroha/core/repository/domain/account_repository.hpp
+===================================================================
+--- iroha.orig/core/repository/domain/account_repository.hpp
++++ iroha/core/repository/domain/account_repository.hpp
+@@ -31,7 +31,7 @@
+         bool update_quantity(
+             const std::string& uuid,
+             const std::string& assetName,
+-            long newValue
++            std::int64_t newValue
+         );
+ 
+         object::Account findByUuid(const std::string& uuid);
+
+Index: iroha/test/infra/protobuf/convertor_test.cpp
+===================================================================
+--- iroha.orig/test/infra/protobuf/convertor_test.cpp
++++ iroha/test/infra/protobuf/convertor_test.cpp
+@@ -166,7 +166,7 @@
+ 
+ TEST(convertor, convertAddAccountTransaction) {
+ 
+-    std::vector<std::tuple<std::string, long>> assets;
++    std::vector<std::tuple<std::string, std::int64_t>> assets;
+     assets.push_back(std::make_pair("Sample1",  311));
+     assets.push_back(std::make_pair("Sample2", 1204));
+     assets.push_back(std::make_pair("Sample3",  324));
+@@ -200,7 +200,7 @@
+ 
+ TEST(convertor, convertSerialize) {
+ 
+-    std::vector<std::tuple<std::string, long>> assets;
++    std::vector<std::tuple<std::string, std::int64_t>> assets;
+     assets.push_back(std::make_pair("Sample1",  311));
+     assets.push_back(std::make_pair("Sample2", 1204));
+     assets.push_back(std::make_pair("Sample3",  324));
+
+Index: iroha/core/vendor/KeccakCodePackage/Modes/SimpleFIPS202.c
+===================================================================
+--- iroha.orig/core/vendor/KeccakCodePackage/Modes/SimpleFIPS202.c
++++ iroha/core/vendor/KeccakCodePackage/Modes/SimpleFIPS202.c
+@@ -17,30 +17,30 @@
+ 
+ int SHAKE128(unsigned char *output, size_t outputByteLen, const unsigned char *input, size_t inputByteLen)
+ {
+-    return KeccakWidth1600_Sponge(1344, 256, input, inputByteLen, 0x1F, output, outputByteLen);
++    return KeccakWidth800_Sponge(1344, 256, input, inputByteLen, 0x1F, output, outputByteLen);
+ }
+ 
+ int SHAKE256(unsigned char *output, size_t outputByteLen, const unsigned char *input, size_t inputByteLen)
+ {
+-    return KeccakWidth1600_Sponge(1088, 512, input, inputByteLen, 0x1F, output, outputByteLen);
++    return KeccakWidth800_Sponge(1088, 512, input, inputByteLen, 0x1F, output, outputByteLen);
+ }
+ 
+ int SHA3_224(unsigned char *output, const unsigned char *input, size_t inputByteLen)
+ {
+-    return KeccakWidth1600_Sponge(1152, 448, input, inputByteLen, 0x06, output, 224/8);
++    return KeccakWidth800_Sponge(1152, 448, input, inputByteLen, 0x06, output, 224/8);
+ }
+ 
+ int SHA3_256(unsigned char *output, const unsigned char *input, size_t inputByteLen)
+ {
+-    return KeccakWidth1600_Sponge(1088, 512, input, inputByteLen, 0x06, output, 256/8);
++    return KeccakWidth800_Sponge(1088, 512, input, inputByteLen, 0x06, output, 256/8);
+ }
+ 
+ int SHA3_384(unsigned char *output, const unsigned char *input, size_t inputByteLen)
+ {
+-    return KeccakWidth1600_Sponge( 832, 768, input, inputByteLen, 0x06, output, 384/8);
++    return KeccakWidth800_Sponge( 832, 768, input, inputByteLen, 0x06, output, 384/8);
+ }
+ 
+ int SHA3_512(unsigned char *output, const unsigned char *input, size_t inputByteLen)
+ {
+-    return KeccakWidth1600_Sponge(576, 1024, input, inputByteLen, 0x06, output, 512/8);
++    return KeccakWidth800_Sponge(576, 1024, input, inputByteLen, 0x06, output, 512/8);
+ }

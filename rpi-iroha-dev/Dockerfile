@@ -57,7 +57,7 @@ COPY ./grpc.patch /var/tmp
 
 RUN git clone --recursive -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc.git && \
     cd grpc && \
-    cat /var/tmp/grpc.patch | patch -u -p1 && \
+    patch -p1 </var/tmp/grpc.patch && \
     make && \
     make install
 
