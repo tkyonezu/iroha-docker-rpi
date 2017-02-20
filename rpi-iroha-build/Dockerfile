@@ -12,14 +12,14 @@ FROM tkyonezu/rpi-iroha-dev
 
 MAINTAINER Takeshi Yonezu <yonezu@soramitsu.co.jp>
 
-USER root
-
 ARG BRANCH=${BRANCH:-master}
 RUN echo "IROHA clone branch: ${BRANCH}"
 
-LABEL GIT="git clone -b ${BRANCH} --recursive https://github.com/hyperledger/iroha.git iroha"
-LABEL BUILD="docker build --build-arg BRANCH=${BRANCH} -t tkyonezu/rpi-iroha-build ."
-LABEL RUN="docker run -d --name iroha tkyonezu/rpi-iroha-build"
+LABEL Vendor="Soramitsu,Co.,Ltd." \
+      License="Apache License, Version 2.0" \
+      Git="git clone -b ${BRANCH} --recursive https://github.com/hyperledger/iroha.git" \
+      Build="docker build --build-arg BRANCH=${BRANCH} -t tkyonezu/rpi-iroha-build ." \
+      Run="docker run -d --name rpi-iroha-build -p1204:1204 tkyonezu/rpi-iroha-build"
 
 ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-armhf
 ENV IROHA_HOME /opt/iroha
@@ -53,7 +53,6 @@ RUN groupadd -g 168 iroha && \
     useradd -g iroha -u 168 -c "IROHA Administrator" -d /opt/iroha iroha && \
     chown iroha:iroha /opt/iroha
 
-## USER iroha
 WORKDIR ${IROHA_HOME}
 
 CMD ["/bin/su","-","iroha","-c","env IROHA_HOME=${IROHA_HOME} ${IROHA_HOME}/build/bin/iroha-main"]
