@@ -12,10 +12,10 @@ FROM armhf/debian
 
 MAINTAINER Takeshi Yonezu <yonezu@soramitsu.co.jp>
 
-USER root
-
-LABEL BUILD="docker build -t tkyonezu/rpi-iroha-dev ."
-LABEL RUN="docker run -it --name rpi-iroha-dev tkyonezu/rpi-iroha-dev /bin/bash"
+LABEL Vendor="Soramitsu,Co.,Ltd." \
+      License="Apache License, Version 2.0" \
+      Build="docker build -t tkyonezu/rpi-iroha-dev ."
+      Run="docker run -it --name rpi-iroha-dev tkyonezu/rpi-iroha-dev /bin/bash"
 
 #
 # Upgrade Debian
